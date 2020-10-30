@@ -1,6 +1,7 @@
 #include <iostream>
+#include "Test.h"
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
+    Test::test_simple_decry_encry();
     return 0;
 }

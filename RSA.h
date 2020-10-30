@@ -6,20 +6,23 @@
 #define RSA_RSA_H
 
 #include "Integer.h"
+#include <cstdint>
 
 class RSA {
      Integer n,p,q,e,d;
 private:
     Integer find_prime(uint32_t digit);
-    Integer find_in_rrs(Integer n);
+    static Integer find_in_rrs(Integer n);
+    static Integer euler_func(Integer& t_n, Integer& t_p, Integer& t_q);
+    static Integer random_int(Integer& max);
 
 public:
-    void set_up(const Integer& p, const Integer& q);
+    void set_up(Integer& p, Integer& q);
     void set_up();
 
 public:
-    Integer decryption(Integer& M);
-    Integer encryption(Integer& C);
+    Integer decryption(Integer& C);
+    Integer encryption(Integer& M);
 };
 
 
