@@ -3,12 +3,97 @@
 //
 
 #include "RSA.h"
+#include <vector>
+#include <iostream>
+using namespace std;
 
 Integer RSA::find_prime(uint32_t digit = 768) {
-    // random generate
-    Integer max(UINT32_MAX);
+    int ori_primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97};
+    vector<Integer> primes(sizeof(ori_primes)/ sizeof(0), Integer(0));
+    for(int i=0; i< sizeof(ori_primes)/ sizeof(0); i++) primes[i] = Integer(ori_primes[i]);
+    Integer find_cnt(0);
+    Integer one(1);
+    Integer two(2);
 
-    return Integer();
+    Integer max(UINT32_MAX);
+    vector<uint32_t> num(digit, 0);
+    uint32_t base = 0;
+    for(uint32_t i = 0; i*32<digit; i+=1) {
+        base = random_int32();
+        if (((i+1)*32 >= digit)) {
+            base = random_int32(1<<(digit-i*32-1));
+            base += 1<<(digit-i*32-1);
+        }
+        if((i == 0) && (base % 2 == 0)) {
+            i -= 1;
+            continue;
+        }
+        num[i] = base;
+    }
+    Integer n(num);
+
+    clock_t begin = clock();
+    clock_t end = clock();
+    double little_prime = 0;
+    double miller = 0;
+    while (true) {
+        begin = clock();
+        find_cnt = Integer::add(find_cnt, one);
+        // random generate a integer
+        bool is_prime = true;
+        for(int i=0; i<primes.size(); i++) {
+            Integer& p = primes[i];
+            auto res = Integer::div(n, p);
+            if(Integer::is_zero(res.second)) {
+                is_prime = false;
+                break;
+            }
+        }
+        if(!is_prime) {
+            n = Integer::add(n, two);
+            continue;
+        };
+        begin = clock();
+        Integer s(0);
+        Integer d = Integer::sub(n, one);
+        while (true) {
+            auto res = Integer::div(d, two);
+            if(Integer::equal(res.second, one)) {
+                break;
+            }
+            s = Integer::add(s, one);
+            d = res.first;
+        }
+        end = clock();
+        little_prime += (double)(end-begin)/CLOCKS_PER_SEC;
+        begin = clock();
+        int max_trial = 5;
+        Integer n_minus = Integer::sub(n, one);
+        bool pass = false;
+        for(int i=0; i<max_trial; i++) {
+            Integer a = random_int(n);
+            if(Integer::equal(Integer::debug_mod_in_exp(a, d, n), one)) {
+                pass = true;
+            } else {
+                Integer dd = d;
+                for(Integer j(0); !Integer::equal(j, s); j = Integer::add(j, one)) {
+                    if(Integer::equal(Integer::debug_mod_in_exp(a, dd, n), n_minus)) {
+                        pass = true;
+                        break;
+                    }
+                    dd = Integer::mul(dd, two);
+                }
+            }
+            if(!pass) break;
+        }
+        if(pass) {
+            return n;
+        }
+        n = Integer::add(n, two);
+        end = clock();
+        miller += (double)(end-begin)/CLOCKS_PER_SEC;
+        begin = clock();
+    }
 }
 
 Integer RSA::find_in_rrs(Integer t_n) {
@@ -59,3 +144,25 @@ Integer RSA::euler_func(Integer &t_n, Integer &t_p, Integer &t_q) {
     Integer one(1);
     return Integer::add(num, one);
 }
+
+RSA::RSA() {
+    srand(time(nullptr));
+}
+
+uint32_t RSA::random_int32(uint32_t max) {
+    double p = (double)rand() / (RAND_MAX+1);
+    return max * p;
+}
+
+Integer RSA::random_int(Integer &max) {
+    vector<uint32_t> nn = max.getNN();
+    uint32_t digit = nn.size();
+    uint32_t mid_digit = rand() % digit;
+    nn[mid_digit] = random_int32(nn[mid_digit]);
+    for(uint32_t i = 0; i<mid_digit; i++) {
+        nn[i] = random_int32();
+    }
+    return Integer(nn);
+}
+
+

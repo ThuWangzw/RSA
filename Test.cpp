@@ -43,11 +43,10 @@ void Test::test_mul() {
 }
 
 void Test::test_div() {
-    vector<uint32_t> an(2), bn(2);
-    an[0] = 1;
-    bn[0] = 1;
+    vector<uint32_t> an(2), bn(1);
+    an[0] = UINT32_MAX;
+    bn[0] = 2;
     an[1] = 1;
-    bn[1] = 1;
     Integer a(an);
     Integer b(bn);
     auto c = Integer::div(a, b);
@@ -66,9 +65,9 @@ void Test::test_inverse() {
 
 void Test::test_mod() {
     vector<uint32_t> an(1), bn(1), en(1);
-    an[0] = 117;
-    bn[0] = 5;
-    en[0] = 117;
+    an[0] = 25;
+    bn[0] = 187;
+    en[0] = 107;
     Integer a(an);
     Integer b(bn);
     Integer e(en);
@@ -89,5 +88,12 @@ void Test::test_simple_decry_encry() {
     rsa.set_up(p, q);
     Integer C = rsa.encryption(M);
     Integer RM = rsa.decryption(C);
+    cout << "done";
+}
+
+void Test::test_big_prime() {
+    uint32_t digit = 384;
+    RSA rsa;
+    Integer p = rsa.find_prime(digit);
     cout << "done";
 }

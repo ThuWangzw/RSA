@@ -4,9 +4,12 @@
 
 #include "Integer.h"
 #include <vector>
+#include <ctime>
 
 using namespace std;
-
+double mod_time = 0;
+double mod_time1=0;
+double mod_time2 = 0;
 Integer::Integer() {
     n = vector<uint32_t>(1, 0);
 };
@@ -17,6 +20,7 @@ Integer::Integer(uint32_t num) {
 
 Integer::Integer(std::vector<uint32_t> &nn) {
     n = nn;
+    _remove_zero(n);
 }
 
 void Integer::setInteger(std::vector<uint32_t> &nn) {
@@ -106,6 +110,10 @@ std::pair<Integer, Integer> Integer::div(Integer& a, Integer& b) {
     // 假定a > b
     vector<uint32_t > aa = a.getNN();
     vector<uint32_t > ba = b.getNN();
+    Integer two(2);
+    if(ba.size() == 1) {
+        return _div(a, ba[0]);
+    }
     auto a_len = aa.size();
     auto b_len = ba.size();
     auto max_len = (a_len>b_len)?a_len:b_len;
@@ -113,11 +121,23 @@ std::pair<Integer, Integer> Integer::div(Integer& a, Integer& b) {
     vector<uint32_t> pa(max_len, 0);
     for(long int digit = a_len-b_len; digit >= 0; digit--) {
         // if a[len-digit:] > b
+        Integer cnt(0);
+        Integer one(1);
         while (Integer::larger_than(ra, digit, a_len, ba)) {
+            vector<uint32_t > bbaa = b.getNN();
+            Integer bba(bbaa);
+            while (Integer::larger_than(ra, digit, a_len, bba.n)) {
+                bba = mul(bba, two);
+            }
+            auto res = div(bba, two);
+            bba = res.first;
+            bbaa = bba.n;
+            uint32_t bb_len = bbaa.size();
 //            Integer::_sub(ra, digit, a_len, ba, 0, b_len);
-            for(uint32_t i = digit; i < digit+b_len; i++) {
-                if(ra[i] >= ba[i-digit]) {
-                    ra[i] = ra[i] - ba[i-digit];
+            cnt = add(cnt, one);
+            for(uint32_t i = digit; i < digit+bb_len; i++) {
+                if(ra[i] >= bbaa[i-digit]) {
+                    ra[i] = ra[i] - bbaa[i-digit];
                 } else{
                     for(uint32_t next_digit = i+1; next_digit < a_len; next_digit++) {
                         if(ra[next_digit] > 0){
@@ -125,13 +145,15 @@ std::pair<Integer, Integer> Integer::div(Integer& a, Integer& b) {
                             for(uint32_t between_digit = next_digit-1; between_digit > digit; between_digit--) {
                                 ra[between_digit] = UINT32_MAX;
                             }
-                            ra[i] = (UINT32_MAX-ba[i-digit])+1+ra[i];
+                            ra[i] = (UINT32_MAX-bbaa[i-digit])+1+ra[i];
                             break;
                         }
                     }
                 }
             }
             pa[digit]+=1;
+            _remove_zero(ra);
+            a_len = ra.size();
         }
     }
     _remove_zero(ra);
@@ -164,20 +186,26 @@ Integer Integer::inverse(Integer &n, Integer &a) {
 }
 
 Integer Integer::mod_in_exp(Integer &a, Integer &e, Integer &p) {
+    clock_t begin = clock();
     Integer one(1);
     Integer two(2);
 
     if(equal(e, one)) {
         auto res = div(a, p);
+        mod_time1 += (double)(clock()-begin)/CLOCKS_PER_SEC;
         return res.second;
     }
     else if(equal(e, two)) {
+//        mod_time += (double)(clock()-begin)/CLOCKS_PER_SEC;
+        return Integer(1);
         auto num = mul(a, a);
         auto res = div(num, p);
         return res.second;
     }
     else{
+        begin = clock();
         pair<Integer, Integer> res = div(e, two);
+        mod_time2 += (double)(clock()-begin)/CLOCKS_PER_SEC;
         Integer half_mod = mod_in_exp(a, res.first, p);
         Integer full_mod = mod_in_exp(half_mod, two, p);
         if(!is_zero(res.second)) {
@@ -210,7 +238,10 @@ Integer Integer::cut(uint32_t start, uint32_t end) {
 bool Integer::larger_than(std::vector<uint32_t>& a, uint32_t begin, uint32_t end, std::vector<uint32_t>& b) {
     // 假定a的位数比b高
     uint32_t a_len = end-begin;
-    b.resize(a_len, 0);
+    if(a_len > b.size())
+        return true;
+    else if(a_len < b.size())
+        return false;
     for(long long digit = a_len-1; digit >= 0; digit--){
         if(a[digit+begin] > b[digit]) return true;
         else if(a[digit+begin] < b[digit]) return false;
@@ -262,4 +293,40 @@ Integer Integer::gcd(Integer &n, Integer &a) {
         r1 = r;
     }
     return r0;
+}
+
+uint32_t Integer::get_digit() {
+    uint32_t digit = n.size()*32 - 32;
+    uint32_t large = n[n.size()-1];
+    while (large > 0) {
+        digit++;
+        large /= 2;
+    }
+    return digit;
+}
+
+uint32_t Integer::get_large() {
+    return n[n.size()-1];
+}
+
+std::pair<Integer, Integer> Integer::_div(Integer &a, uint32_t b) {
+    vector<uint32_t > aa = a.getNN();
+    vector<uint32_t > ca(aa.size(), 0);
+    uint32_t r;
+    uint64_t last = 0;
+    for(int digit=aa.size()-1; digit>=0; digit--) {
+        last = last*UINT32_MAX+last+aa[digit];
+        ca[digit] = last/b;
+        last = last % b;
+    }
+    r = last;
+    return pair<Integer, Integer>(Integer(ca), Integer(r));
+}
+
+Integer Integer::debug_mod_in_exp(Integer &a, Integer &e, Integer &p) {
+    clock_t begin = clock();
+    auto res = mod_in_exp(a, e, p);
+    clock_t end = clock();
+    mod_time += (double)(end-begin)/CLOCKS_PER_SEC;
+    return res;
 }

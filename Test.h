@@ -21,6 +21,7 @@ public:
     static void test_mod();
     static void test_crt();
     static void test_simple_decry_encry();
+    static void test_big_prime();
 };
 
 

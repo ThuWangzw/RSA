@@ -2,6 +2,6 @@
 #include "Test.h"
 
 int main() {
-    Test::test_simple_decry_encry();
+    Test::test_big_prime();
     return 0;
 }

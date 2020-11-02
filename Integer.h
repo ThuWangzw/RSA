@@ -20,9 +20,12 @@ public:
     std::vector<uint32_t> getNN();
 
     static bool larger_than(std::vector<uint32_t>& a, uint32_t begin, uint32_t end, std::vector<uint32_t>& b);
+    uint32_t get_digit();
+    uint32_t get_large();
 
 private:
     Integer cut(uint32_t start, uint32_t end);
+    static std::pair<Integer, Integer> _div(Integer& a, uint32_t b);
 
     static void _remove_zero(std::vector<uint32_t>& a);
 
@@ -36,6 +39,7 @@ public:
     static bool equal(Integer a, Integer& b);
     static bool is_even(Integer& a);
     static Integer mod_in_exp(Integer& a, Integer& e, Integer& p);
+    static Integer debug_mod_in_exp(Integer& a, Integer& e, Integer& p);
     static Integer crt(Integer& n, Integer& p, Integer& q, Integer& rp, Integer& rq);
     static bool is_zero(Integer& a);
 };
