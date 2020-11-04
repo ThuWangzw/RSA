@@ -12,6 +12,7 @@
 
 class Integer {
     std::vector<uint32_t> n;
+    std::vector<uint32_t> reciprocal;
 public:
     Integer();
     explicit Integer(std::vector<uint32_t>& nn);
@@ -25,11 +26,18 @@ public:
 
 private:
     Integer cut(uint32_t start, uint32_t end);
-    static std::pair<Integer, Integer> _div(Integer& a, uint32_t b);
 
+    static std::pair<Integer, Integer> _div(Integer& a, uint32_t b);
     static void _remove_zero(std::vector<uint32_t>& a);
 
 public:
+    void rightShift(uint32_t m);
+    void leftShift(uint32_t m);
+    void getReciprocalNewton();
+    bool ReciprocalFinished();
+    static void print(Integer m);
+    static Integer get_Integer_from_input();
+    static Integer test_reci(Integer& p);
     static Integer add(Integer& a, Integer& b);
     static Integer sub(Integer& a, Integer& b);
     static Integer mul(Integer& a, Integer& b);
@@ -39,9 +47,11 @@ public:
     static bool equal(Integer a, Integer& b);
     static bool is_even(Integer& a);
     static Integer mod_in_exp(Integer& a, Integer& e, Integer& p);
+    static Integer fast_mod_in_exp(Integer& a, Integer& p);
     static Integer debug_mod_in_exp(Integer& a, Integer& e, Integer& p);
     static Integer crt(Integer& n, Integer& p, Integer& q, Integer& rp, Integer& rq);
     static bool is_zero(Integer& a);
+    static bool large_than(Integer& a, Integer& b);
 };
 
 

@@ -5,25 +5,33 @@
 #include "Integer.h"
 #include <vector>
 #include <ctime>
+#include <cmath>
+#include <string>
+#include <iostream>
 
 using namespace std;
 double mod_time = 0;
 double mod_time1=0;
 double mod_time2 = 0;
+double mod_time3 = 0;
+
 Integer::Integer() {
     n = vector<uint32_t>(1, 0);
 };
 
 Integer::Integer(uint32_t num) {
     n = vector<uint32_t>(1, num);
+    reciprocal = vector<uint32_t>(1, 0);
 }
 
 Integer::Integer(std::vector<uint32_t> &nn) {
     n = nn;
+    reciprocal = vector<uint32_t>(1, 0);
     _remove_zero(n);
 }
 
 void Integer::setInteger(std::vector<uint32_t> &nn) {
+    reciprocal = vector<uint32_t>(1, 0);
     n = nn;
 }
 
@@ -37,8 +45,8 @@ Integer Integer::add(Integer& a, Integer& b) {
     uint32_t carry = 0;
     uint32_t  digit = 0;
     for(digit = 0; digit < max_len; digit++) {
-        uint32_t res = aa[digit] + ba[digit] + carry;
-        if((res <= aa[digit]) && (ba[digit] > 0)) carry = 1;
+        uint64_t res = (uint64_t)aa[digit] + ba[digit] + carry;
+        if(res > UINT32_MAX) carry = 1;
         else carry = 0;
         ca[digit] = res;
     }
@@ -191,16 +199,16 @@ Integer Integer::mod_in_exp(Integer &a, Integer &e, Integer &p) {
     Integer two(2);
 
     if(equal(e, one)) {
-        auto res = div(a, p);
+        auto res = fast_mod_in_exp(a, p);
         mod_time1 += (double)(clock()-begin)/CLOCKS_PER_SEC;
-        return res.second;
+        return res;
     }
     else if(equal(e, two)) {
-//        mod_time += (double)(clock()-begin)/CLOCKS_PER_SEC;
-        return Integer(1);
+//        return Integer(1);
         auto num = mul(a, a);
-        auto res = div(num, p);
-        return res.second;
+        auto res = fast_mod_in_exp(num, p);
+        mod_time3 += (double)(clock()-begin)/CLOCKS_PER_SEC;
+        return res;
     }
     else{
         begin = clock();
@@ -211,7 +219,7 @@ Integer Integer::mod_in_exp(Integer &a, Integer &e, Integer &p) {
         if(!is_zero(res.second)) {
             full_mod = mul(full_mod, a);
         }
-        return mod_in_exp(full_mod, one, p);
+        return fast_mod_in_exp(full_mod, p);
     }
 }
 
@@ -329,4 +337,125 @@ Integer Integer::debug_mod_in_exp(Integer &a, Integer &e, Integer &p) {
     clock_t end = clock();
     mod_time += (double)(end-begin)/CLOCKS_PER_SEC;
     return res;
+}
+
+void Integer::getReciprocalNewton() {
+    Integer& n = *this;
+    Integer n_reciprocal = Integer(1);
+    uint32_t m=n.get_digit()*2;
+    Integer c(1);
+    c.leftShift(m);
+    n_reciprocal.leftShift(n.get_digit());
+    Integer two(2);
+    uint32_t trails = 1000;
+    Integer zero(0);
+    for(uint32_t i=0; i<trails; i++) {
+        Integer delta = mul(n, n_reciprocal);
+        if(large_than(delta, c)) {
+            cout << "error!" << endl;
+        }
+        delta = sub(c, delta);
+        delta = mul(n_reciprocal, delta);
+        delta.rightShift(m);
+        if(equal(delta, zero)) {
+            break;
+        }
+        n_reciprocal = add(n_reciprocal, delta);
+    }
+    reciprocal = n_reciprocal.n;
+}
+
+void Integer::leftShift(uint32_t m) {
+    uint32_t digit = get_digit();
+    uint32_t n_size = ceil((double)(digit+m)/32);
+    n.resize(n_size, 0);
+    uint32_t large_shift = m/32;
+    uint32_t small_shift = m%32;
+    for(long long i=n_size-1; i>=0; i--) {
+        n[i] = i>=large_shift?((n[i-large_shift]<<small_shift)+((i>=large_shift+1)?(n[i-large_shift-1]>>(32-small_shift)):0)):0;
+    }
+}
+
+void Integer::rightShift(uint32_t m) {
+    uint32_t digit = get_digit();
+    if(digit <= m) {
+        n = vector<uint32_t>(1, 0);
+        return;
+    }
+    uint32_t begin_digit = m/32;
+    uint32_t shift = m%32;
+    for(uint32_t i=0; begin_digit < n.size(); i++, begin_digit++) {
+        n[i] = (n[begin_digit]>>shift)+ (((begin_digit+1<n.size()) && (shift>0))?(n[begin_digit+1]<<(32-shift)):0);
+    }
+    n.resize(uint32_t(ceil((double)(digit-m)/32)), 0);
+}
+
+Integer Integer::fast_mod_in_exp(Integer &a, Integer &p) {
+    if(!p.ReciprocalFinished()) {
+        p.getReciprocalNewton();
+    }
+    Integer reciprocal(p.reciprocal);
+    uint32_t m=p.get_digit()*2;
+    Integer res = mul(a, reciprocal);
+    res.rightShift(m);
+    res = mul(res, p);
+    res = sub(a, res);
+    while (larger_than(res.n, 0, res.n.size(), p.n)) {
+        res = sub(res, p);
+    }
+    return res;
+}
+
+bool Integer::ReciprocalFinished() {
+    vector<uint32_t>& n = reciprocal;
+    for(uint32_t i = 0; i<n.size(); i++) {
+        if(n[i] != 0) return true;
+    }
+    return false;
+}
+
+Integer Integer::test_reci(Integer &p) {
+    if(!p.ReciprocalFinished()) {
+        p.getReciprocalNewton();
+    }
+    Integer reciprocal(p.reciprocal);
+    Integer one(1);
+    uint32_t m=p.get_digit()*2;
+    one.leftShift(m);
+    Integer res = mul(p, reciprocal);
+    return sub(one, res);
+}
+
+Integer Integer::get_Integer_from_input() {
+    Integer num(0);
+    Integer digit(10);
+    string s;
+    cin >> s;
+    uint32_t i = 0;
+    for(string::iterator p = s.begin(); p != s.end(); p++) {
+        char c = *(p)-'0';
+        Integer tc(c);
+        num = mul(num, digit);
+        num = add(num, tc);
+        i++;
+    }
+    return num;
+}
+
+bool Integer::large_than(Integer &a, Integer &b) {
+    return larger_than(a.n, 0, a.n.size(), b.n);
+}
+
+void Integer::print(Integer m) {
+    vector<int> mm;
+    Integer ten(10);
+    while (!is_zero(m)) {
+        auto res = div(m, ten);
+        mm.push_back(res.second.n[0]);
+        m = res.first;
+    }
+    for(int i=mm.size()-1; i >= 0; i--) {
+        cout << mm[i];
+    }
+    cout << endl;
 }

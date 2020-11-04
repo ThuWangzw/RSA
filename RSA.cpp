@@ -7,11 +7,12 @@
 #include <iostream>
 using namespace std;
 
-Integer RSA::find_prime(uint32_t digit = 768) {
+Integer RSA::find_prime(uint32_t digit = 384) {
     int ori_primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97};
     vector<Integer> primes(sizeof(ori_primes)/ sizeof(0), Integer(0));
     for(int i=0; i< sizeof(ori_primes)/ sizeof(0); i++) primes[i] = Integer(ori_primes[i]);
     Integer find_cnt(0);
+    Integer actual_find_cnt(0);
     Integer one(1);
     Integer two(2);
 
@@ -67,6 +68,7 @@ Integer RSA::find_prime(uint32_t digit = 768) {
         end = clock();
         little_prime += (double)(end-begin)/CLOCKS_PER_SEC;
         begin = clock();
+        actual_find_cnt = Integer::add(actual_find_cnt, one);
         int max_trial = 5;
         Integer n_minus = Integer::sub(n, one);
         bool pass = false;
@@ -113,14 +115,20 @@ void RSA::set_up(Integer &np, Integer &nq) {
     Integer euler_n = euler_func(n, p, q);
     e = find_in_rrs(euler_n);
     d = Integer::inverse(euler_n, e);
+    cout << "set up done" << endl;
 }
 
 void RSA::set_up() {
-
+    Integer np = find_prime();
+    Integer nq = find_prime();
+    while(Integer::equal(np, nq)) {
+        nq = find_prime();
+    }
+    set_up(np, nq);
 }
 
 Integer RSA::decryption(Integer &C) {
-//    return Integer::mod_in_exp(C, d, n);
+    return Integer::mod_in_exp(C, d, n);
     Integer one(1);
     Integer p1 = Integer::sub(p, one);
     Integer q1 = Integer::sub(q, one);

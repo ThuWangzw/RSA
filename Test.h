@@ -22,6 +22,11 @@ public:
     static void test_crt();
     static void test_simple_decry_encry();
     static void test_big_prime();
+    static void test_right_shift();
+    static void test_left_shift();
+    static void test_reciprocalNewton();
+    static void test_fast_mod();
+    static void test_decry_encry();
 };
 
 
