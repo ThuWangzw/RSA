@@ -36,6 +36,7 @@ public:
     void getReciprocalNewton();
     bool ReciprocalFinished();
     static void print(Integer m);
+    inline uint8_t getDigit(uint32_t m);
     static Integer get_Integer_from_input();
     static Integer test_reci(Integer& p);
     static Integer add(Integer& a, Integer& b);

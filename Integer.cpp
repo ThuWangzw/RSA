@@ -14,6 +14,12 @@ double mod_time = 0;
 double mod_time1=0;
 double mod_time2 = 0;
 double mod_time3 = 0;
+double mod_time4 = 0;
+double fast_time = 0;
+double fast_time1 = 0;
+double fast_time2 = 0;
+double fast_time3 = 0;
+uint32_t fast_cnt = 0;
 
 Integer::Integer() {
     n = vector<uint32_t>(1, 0);
@@ -57,12 +63,12 @@ Integer Integer::add(Integer& a, Integer& b) {
 
 Integer Integer::sub(Integer& a, Integer& b) {
     // 这里假定a>=b
-    vector<uint32_t > aa = a.getNN();
-    vector<uint32_t > ba = b.getNN();
+    vector<uint32_t >& aa = a.n;
+    vector<uint32_t >& ba = b.n;
     auto max_len = (aa.size()>ba.size())?aa.size():ba.size();
     aa.resize(max_len, 0);
     ba.resize(max_len, 0);
-    vector<uint32_t > ca = aa;
+    vector<uint32_t > ca = a.n;
     for(uint32_t digit = 0; digit < max_len; digit++) {
         if(ca[digit] >= ba[digit]) {
             ca[digit] = ca[digit] - ba[digit];
@@ -84,8 +90,8 @@ Integer Integer::sub(Integer& a, Integer& b) {
 }
 
 Integer Integer::mul(Integer& a, Integer& b) {
-    vector<uint32_t > aa = a.getNN();
-    vector<uint32_t > ba = b.getNN();
+    vector<uint32_t >& aa = a.n;
+    vector<uint32_t >& ba = b.n;
     auto a_len = aa.size();
     auto b_len = ba.size();
     auto max_len = (a_len>b_len)?a_len:b_len;
@@ -198,28 +204,19 @@ Integer Integer::mod_in_exp(Integer &a, Integer &e, Integer &p) {
     Integer one(1);
     Integer two(2);
 
-    if(equal(e, one)) {
-        auto res = fast_mod_in_exp(a, p);
-        mod_time1 += (double)(clock()-begin)/CLOCKS_PER_SEC;
-        return res;
-    }
-    else if(equal(e, two)) {
-//        return Integer(1);
-        auto num = mul(a, a);
-        auto res = fast_mod_in_exp(num, p);
-        mod_time3 += (double)(clock()-begin)/CLOCKS_PER_SEC;
-        return res;
-    }
-    else{
-        begin = clock();
-        pair<Integer, Integer> res = div(e, two);
-        mod_time2 += (double)(clock()-begin)/CLOCKS_PER_SEC;
-        Integer half_mod = mod_in_exp(a, res.first, p);
-        Integer full_mod = mod_in_exp(half_mod, two, p);
-        if(!is_zero(res.second)) {
-            full_mod = mul(full_mod, a);
+    vector<uint32_t>& ea = e.n;
+    uint32_t ea_digit = e.get_digit();
+    Integer res(1);
+    Integer aa(a);
+    for(uint32_t i=0; i<ea_digit; i++) {
+        if(e.getDigit(i)) {
+            res = mul(aa, res);
+            res = fast_mod_in_exp(res, p);
         }
-        return fast_mod_in_exp(full_mod, p);
+        aa = mul(aa, aa);
+        aa = fast_mod_in_exp(aa, p);
+    }
+    return res;
     }
 }
 
@@ -391,18 +388,31 @@ void Integer::rightShift(uint32_t m) {
 }
 
 Integer Integer::fast_mod_in_exp(Integer &a, Integer &p) {
+    fast_cnt++;
+    clock_t begin = clock();
+    clock_t allbegin = begin;
     if(!p.ReciprocalFinished()) {
         p.getReciprocalNewton();
     }
+    begin = clock();
     Integer reciprocal(p.reciprocal);
     uint32_t m=p.get_digit()*2;
+
     Integer res = mul(a, reciprocal);
+    fast_time1 += (double)(clock()-begin)/CLOCKS_PER_SEC;
+    begin = clock();
     res.rightShift(m);
+
     res = mul(res, p);
+    fast_time2 += (double)(clock()-begin)/CLOCKS_PER_SEC;
+    begin = clock();
     res = sub(a, res);
+    fast_time3 += (double)(clock()-begin)/CLOCKS_PER_SEC;
     while (larger_than(res.n, 0, res.n.size(), p.n)) {
         res = sub(res, p);
     }
+
+    fast_time += (double)(clock()-allbegin)/CLOCKS_PER_SEC;
     return res;
 }
 
@@ -458,4 +468,8 @@ void Integer::print(Integer m) {
         cout << mm[i];
     }
     cout << endl;
+}
+
+uint8_t Integer::getDigit(uint32_t m) {
+    return (n.size()>(m/32))? ((n[m/32] >> (m%32)) & 1) : 0;
 }
