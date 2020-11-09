@@ -9,13 +9,16 @@
 #include <cstdint>
 #include <ctime>
 #include <cstdlib>
+#include <thread>
+#include <mutex>
 
 class RSA {
      Integer n,p,q,e,d;
 public:
     RSA();
-
     static Integer find_prime(uint32_t digit);
+    static bool check_prime(std::vector<Integer>& primes, Integer& n);
+    static void _find_prime(Integer& begin_number, Integer& step, Integer& result);
 
 private:
     static Integer find_in_rrs(Integer n);
