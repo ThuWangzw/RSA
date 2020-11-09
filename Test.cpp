@@ -142,5 +142,16 @@ void Test::test_decry_encry() {
     Integer C = rsa.encryption(M);
     Integer RM = rsa.decryption(C);
     Integer::print(RM);
-    cout << "done";
+    return;
+}
+
+void Test::test_mul64() {
+    Integer a = Integer::get_Integer_from_input();
+    Integer b = Integer::get_Integer_from_input();
+    Integer c = Integer::get_Integer_from_input();
+    Integer res = Integer::mul64(a, b);
+    Integer orires = Integer::mul(a, b);
+    bool eq = Integer::equal(c, res);
+    bool orieq = Integer::equal(c, orires);
+    cout << "done" <<endl;
 }

@@ -20,6 +20,9 @@ double fast_time1 = 0;
 double fast_time2 = 0;
 double fast_time3 = 0;
 uint32_t fast_cnt = 0;
+double mul_time = 0;
+double mul_core_time = 0;
+uint32_t mul_cnt = 0;
 
 Integer::Integer() {
     n = vector<uint32_t>(1, 0);
@@ -89,7 +92,9 @@ Integer Integer::sub(Integer& a, Integer& b) {
     return Integer(ca);
 }
 
-Integer Integer::mul(Integer& a, Integer& b) {
+Integer Integer::mul64(Integer& a, Integer& b) {
+    mul_cnt++;
+    clock_t begin = clock();
     vector<uint32_t >& aa = a.n;
     vector<uint32_t >& ba = b.n;
     auto a_len = aa.size();
@@ -97,6 +102,7 @@ Integer Integer::mul(Integer& a, Integer& b) {
     auto max_len = (a_len>b_len)?a_len:b_len;
     vector<uint32_t> ca(max_len*2, 0);
     uint32_t max_cdigit = 0;
+    clock_t core_begin = clock();
     for(uint32_t bdigit = 0; bdigit < b_len; bdigit++) {
         uint32_t bnum = ba[bdigit];
         uint64_t carry = 0;
@@ -115,8 +121,9 @@ Integer Integer::mul(Integer& a, Integer& b) {
             max_cdigit = (digit > max_cdigit)?digit:max_cdigit;
         }
     }
-    ca.resize(max_cdigit+1);
+    mul_core_time += (double)(clock() - core_begin)/CLOCKS_PER_SEC;
     _remove_zero(ca);
+    mul_time += (double)(clock() - begin)/CLOCKS_PER_SEC;
     return Integer(ca);
 }
 
@@ -141,7 +148,7 @@ std::pair<Integer, Integer> Integer::div(Integer& a, Integer& b) {
             vector<uint32_t > bbaa = b.getNN();
             Integer bba(bbaa);
             while (Integer::larger_than(ra, digit, a_len, bba.n)) {
-                bba = mul(bba, two);
+                bba = mul64(bba, two);
             }
             auto res = div(bba, two);
             bba = res.first;
@@ -186,7 +193,7 @@ Integer Integer::inverse(Integer &n, Integer &a) {
         std::pair<Integer, Integer> res = div(r0, r1);
         Integer& p = res.first;
         Integer& r = res.second;
-        Integer tmp = mul(p, t1);
+        Integer tmp = mul64(p, t1);
         while (larger_than(tmp.n, 0, tmp.n.size(), t0.n)) {
             t0 = add(t0, n);
         }
@@ -200,7 +207,6 @@ Integer Integer::inverse(Integer &n, Integer &a) {
 }
 
 Integer Integer::mod_in_exp(Integer &a, Integer &e, Integer &p) {
-    clock_t begin = clock();
     Integer one(1);
     Integer two(2);
 
@@ -210,14 +216,13 @@ Integer Integer::mod_in_exp(Integer &a, Integer &e, Integer &p) {
     Integer aa(a);
     for(uint32_t i=0; i<ea_digit; i++) {
         if(e.getDigit(i)) {
-            res = mul(aa, res);
+            res = mul64(aa, res);
             res = fast_mod_in_exp(res, p);
         }
-        aa = mul(aa, aa);
+        aa = mul64(aa, aa);
         aa = fast_mod_in_exp(aa, p);
     }
     return res;
-    }
 }
 
 Integer Integer::crt(Integer &n, Integer &p, Integer &q, Integer &rp, Integer &rq) {
@@ -347,12 +352,12 @@ void Integer::getReciprocalNewton() {
     uint32_t trails = 1000;
     Integer zero(0);
     for(uint32_t i=0; i<trails; i++) {
-        Integer delta = mul(n, n_reciprocal);
+        Integer delta = mul64(n, n_reciprocal);
         if(large_than(delta, c)) {
             cout << "error!" << endl;
         }
         delta = sub(c, delta);
-        delta = mul(n_reciprocal, delta);
+        delta = mul64(n_reciprocal, delta);
         delta.rightShift(m);
         if(equal(delta, zero)) {
             break;
@@ -398,12 +403,12 @@ Integer Integer::fast_mod_in_exp(Integer &a, Integer &p) {
     Integer reciprocal(p.reciprocal);
     uint32_t m=p.get_digit()*2;
 
-    Integer res = mul(a, reciprocal);
+    Integer res = mul64(a, reciprocal);
     fast_time1 += (double)(clock()-begin)/CLOCKS_PER_SEC;
     begin = clock();
     res.rightShift(m);
 
-    res = mul(res, p);
+    res = mul64(res, p);
     fast_time2 += (double)(clock()-begin)/CLOCKS_PER_SEC;
     begin = clock();
     res = sub(a, res);
@@ -432,7 +437,7 @@ Integer Integer::test_reci(Integer &p) {
     Integer one(1);
     uint32_t m=p.get_digit()*2;
     one.leftShift(m);
-    Integer res = mul(p, reciprocal);
+    Integer res = mul64(p, reciprocal);
     return sub(one, res);
 }
 
@@ -445,7 +450,7 @@ Integer Integer::get_Integer_from_input() {
     for(string::iterator p = s.begin(); p != s.end(); p++) {
         char c = *(p)-'0';
         Integer tc(c);
-        num = mul(num, digit);
+        num = mul64(num, digit);
         num = add(num, tc);
         i++;
     }
@@ -472,4 +477,30 @@ void Integer::print(Integer m) {
 
 uint8_t Integer::getDigit(uint32_t m) {
     return (n.size()>(m/32))? ((n[m/32] >> (m%32)) & 1) : 0;
+}
+
+Integer Integer::mul(Integer &a, Integer &b) {
+    mul_cnt++;
+    clock_t begin = clock();
+    vector<uint32_t >& aa = a.n;
+    vector<uint32_t >& ba = b.n;
+    auto a_len = aa.size();
+    auto b_len = ba.size();
+    auto max_len = (a_len>b_len)?a_len:b_len;
+    uint64_t mask = UINT32_MAX;
+    vector<uint64_t> ca(max_len*2, 0);
+    vector<uint32_t> cca(max_len*2, 0);
+    for(uint32_t ai=0; ai<a_len; ai++) {
+        for(uint32_t bi=0; bi<b_len; bi++) {
+            ca[ai+bi] += (uint64_t)aa[ai]*(uint64_t)ba[bi];
+            ca[ai+bi+1] += ca[ai+bi]>>32u;
+            ca[ai+bi] =ca[ai+bi]&mask;
+        }
+    }
+    for(uint32_t i=0; i<a_len+b_len; i++) {
+        cca[i] = ca[i];
+    }
+    _remove_zero(cca);
+    mul_time += (double)(clock() - begin)/CLOCKS_PER_SEC;
+    return Integer(cca);
 }

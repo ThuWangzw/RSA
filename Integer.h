@@ -42,6 +42,7 @@ public:
     static Integer add(Integer& a, Integer& b);
     static Integer sub(Integer& a, Integer& b);
     static Integer mul(Integer& a, Integer& b);
+    static Integer mul64(Integer& a, Integer& b);
     static std::pair<Integer, Integer> div(Integer& a, Integer& b);
     static Integer inverse(Integer& n, Integer& a);
     static Integer gcd(Integer& n, Integer& a);
