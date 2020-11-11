@@ -8,6 +8,8 @@
 #include <vector>
 #include <utility>
 #include <cstdint>
+#include <string>
+#include <cstdlib>
 
 
 class Integer {
@@ -35,6 +37,7 @@ public:
     void leftShift(uint32_t m);
     void getReciprocalNewton();
     bool ReciprocalFinished();
+    std::string toString();
     static void print(Integer m);
     inline uint8_t getDigit(uint32_t m);
     static Integer get_Integer_from_input();

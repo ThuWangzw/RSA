@@ -166,3 +166,23 @@ void Test::test_mul64() {
     bool orieq = Integer::equal(c, orires);
     cout << "done" <<endl;
 }
+
+void Test::test_tostring()
+{
+    vector<uint32_t> an(7, 0), bn(1, 0);
+    an[0] = 3711959039;
+    an[1] = 2225340415;
+    an[2] = 1477443583;
+    an[3] = 3773431807;
+    an[4] = 2640576511;
+    an[5] = 3250192383;
+    an[6] = 2866020351;
+    bn[0] = 3711959039;
+    bn[1] = 2225340415;
+    bn[2] = 1477443583;
+    bn[3] = 3773431807;
+    Integer a(an);
+    Integer b(bn);
+    cout << a.toString() << endl;
+    cout << b.toString() << endl;
+}

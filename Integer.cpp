@@ -429,6 +429,17 @@ bool Integer::ReciprocalFinished() {
     return false;
 }
 
+std::string Integer::toString()
+{
+    string str;
+    char buffer[100];
+    for (uint32_t i = 0; i < n.size(); i++) {
+        sprintf_s(buffer, "%x", n[i]);
+        str += string(buffer);
+    }
+    return str;
+}
+
 Integer Integer::test_reci(Integer &p) {
     if(!p.ReciprocalFinished()) {
         p.getReciprocalNewton();

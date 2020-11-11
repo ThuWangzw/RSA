@@ -2,6 +2,6 @@
 #include "Test.h"
 
 int main() {
-    Test::test_decry_encry_str();
+    Test::test_tostring();
     return 0;
 }

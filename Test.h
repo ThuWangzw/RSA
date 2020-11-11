@@ -29,6 +29,7 @@ public:
     static void test_decry_encry();
     static void test_decry_encry_str();
     static void test_mul64();
+    static void test_tostring();
 };
 
 
