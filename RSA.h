@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <thread>
 #include <mutex>
+#include <string>
 
 class RSA {
      Integer n,p,q,e,d;
@@ -33,6 +34,8 @@ public:
 public:
     Integer decryption(Integer& C);
     Integer encryption(Integer& M);
+    std::string decryption(std::vector<Integer>& C);
+    std::vector<Integer> encryption(std::string& M);
 };
 
 

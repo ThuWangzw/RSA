@@ -104,6 +104,41 @@ Integer RSA::encryption(Integer &M) {
     return Integer::mod_in_exp(M, e, n);
 }
 
+std::string RSA::decryption(std::vector<Integer>& C)
+{
+    string result;
+    uint32_t mask = 127;
+    for (vector<Integer>::iterator it = C.begin(); it != C.end(); it++) {
+        uint32_t num = Integer::mod_in_exp(*it, d, n).get_large();
+        if ((num >> (7 * 3)) > 0) result.push_back((num >> (7 * 3))& mask);
+        result.push_back((num >> (7 * 2))& mask);
+        result.push_back((num >> (7 * 1))& mask);
+        result.push_back(num& mask);
+    }
+    return result;
+}
+
+std::vector<Integer> RSA::encryption(std::string& M)
+{
+    vector<Integer> result;
+    vector<Integer> str2int;
+    uint32_t num = 0;
+    uint32_t step = 32 / 7;
+    uint32_t i;
+    for (i = 0; i < M.size(); i++) {
+        if ((i % step == 0) && (i > 0)) {
+            str2int.push_back(Integer(num));
+            num = 0;
+        }
+        num = (num << 7) + M[i];
+    }
+    if ((num > 0) || (i == 0)) str2int.push_back(Integer(num));
+    for (vector<Integer>::iterator it = str2int.begin(); it != str2int.end(); it++) {
+        result.push_back(Integer::mod_in_exp(*it, e, n));
+    }
+    return result;
+}
+
 Integer RSA::euler_func(Integer &t_n, Integer &t_p, Integer &t_q) {
     auto num = Integer::sub(t_n, t_p);
     num = Integer::sub(num, t_q);

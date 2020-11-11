@@ -27,6 +27,7 @@ public:
     static void test_reciprocalNewton();
     static void test_fast_mod();
     static void test_decry_encry();
+    static void test_decry_encry_str();
     static void test_mul64();
 };
 

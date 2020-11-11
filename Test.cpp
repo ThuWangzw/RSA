@@ -145,6 +145,17 @@ void Test::test_decry_encry() {
     return;
 }
 
+void Test::test_decry_encry_str()
+{
+    RSA rsa;
+    rsa.set_up();
+    string M = "Hello, RSA!";
+    auto C = rsa.encryption(M);
+    string RM = rsa.decryption(C);
+    cout << RM << endl;
+    return;
+}
+
 void Test::test_mul64() {
     Integer a = Integer::get_Integer_from_input();
     Integer b = Integer::get_Integer_from_input();
