@@ -2,7 +2,7 @@
 
 ## 程序使用说明
 
-![image-20201112164314790](doc\image-20201112164314790.png)
+![image-20201112164314790](https://github.com/ThuWangzw/RSA/blob/main/doc/image-20201112164314790.png?raw=true)
 
 双击RSAToy.exe运行程序，界面主要分为两部分：
 
